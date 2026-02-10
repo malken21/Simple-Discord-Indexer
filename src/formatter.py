@@ -1,5 +1,7 @@
 import logging
 import os
+import asyncio
+import random
 import discord
 from .utils import sanitize
 from .config import LOGGER_NAME
@@ -54,7 +56,23 @@ class MessageFormatter:
                     filepath = os.path.join(attachments_dir, filename)
                     
                     if not os.path.exists(filepath):
-                        await attachment.save(filepath)
+                        # 指数バックオフを用いたリトライ処理
+                        max_retries = 3
+                        base_delay = 1.0 # 秒
+                        
+                        for attempt in range(max_retries):
+                            try:
+                                await attachment.save(filepath)
+                                break # 成功したらループを抜ける
+                            except Exception as e:
+                                if attempt < max_retries - 1:
+                                    # ランダムな揺らぎ（Jitter）を追加
+                                    delay = (base_delay * (2 ** attempt)) + (random.random() * 0.5)
+                                    logger.warning(f"    添付ファイルのダウンロードに失敗 ({attachment.filename}): {e}。 {delay:.2f}秒後に再試行します... (試行 {attempt + 1}/{max_retries})")
+                                    await asyncio.sleep(delay)
+                                else:
+                                    # 最後のリトライでも失敗した場合
+                                    raise e
                     
                     # Markdownリンク（標準化された相対パス）
                     # ../attachments/{filename} という構造は固定とする
