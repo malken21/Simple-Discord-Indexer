@@ -29,12 +29,17 @@ Discord サーバーのメッセージログ、フォーラムスレッド、添
 ```text
 data/                               # 取得データの保存先
 ├── fetch_state.json                # 取得状況の管理ファイル
-└── (Guild Name)/                   # サーバーごとのデータ
-    └── (Category)/                 # カテゴリフォルダ
-        └── (Channel)/              # チャンネルフォルダ
-            ├── messages.md         # 閲覧用ログ
-            ├── messages.jsonl      # データ用ログ
-            └── attachments/        # 添付ファイル
+└── (Category)/                     # カテゴリフォルダ
+    └── (Channel)/                  # チャンネルフォルダ
+        ├── messages/               # 閲覧用ログ（日付別）
+        │   └── YYYY-MM-DD.md
+        ├── messages.jsonl          # データ用ログ
+        ├── channel_info.json       # チャンネルのメタデータ
+        ├── attachments/            # 添付ファイル
+        └── (Thread Name)/          # スレッドフォルダ（存在する場合）
+            ├── messages/
+            ├── messages.jsonl
+            └── ...
 ```
 
 ---
