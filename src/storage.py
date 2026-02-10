@@ -52,6 +52,24 @@ class StorageManager:
         メッセージをバッファに追加します。
         バッファサイズが閾値に達した場合、自動的にフラッシュします。
         """
+        # --- Markdownフォーマット & 添付ファイル保存 ---
+        # 保存されたファイル名を取得するために先に実行する
+        attachment_rel_paths = []
+        try:
+            formatted_msg, attachment_filenames = await MessageFormatter.to_markdown(message, attachments_dir)
+            
+            # JSONL用の相対パスを作成
+            attachment_rel_paths = [f"attachments/{fname}" for fname in attachment_filenames]
+
+            msg_date_str = message.created_at.strftime('%Y-%m-%d')
+            
+            if msg_date_str not in self.buffer_content_md:
+                self.buffer_content_md[msg_date_str] = ""
+            
+            self.buffer_content_md[msg_date_str] += formatted_msg
+        except Exception as e:
+            logger.error(f"メッセージID {message.id} のMarkdown変換中にエラーが発生しました: {e}")
+
         # --- JSONLデータの準備 ---
         try:
             msg_data = {
@@ -67,7 +85,7 @@ class StorageManager:
                 "clean_content": message.clean_content,
                 "created_at": str(message.created_at),
                 "edited_at": str(message.edited_at) if message.edited_at else None,
-                "attachments": [a.url for a in message.attachments],
+                "attachments": attachment_rel_paths, # ローカルパスを使用
                 "embeds": [e.to_dict() for e in message.embeds],
                 "reference": {
                     "message_id": message.reference.message_id,
@@ -82,18 +100,6 @@ class StorageManager:
             self.buffer_content_jsonl.append(json.dumps(msg_data, ensure_ascii=False) + "\n")
         except Exception as e:
             logger.error(f"メッセージID {message.id} のJSONデータ作成中にエラーが発生しました: {e}")
-
-        # --- Markdownフォーマット ---
-        try:
-            formatted_msg = await MessageFormatter.to_markdown(message, attachments_dir)
-            msg_date_str = message.created_at.strftime('%Y-%m-%d')
-            
-            if msg_date_str not in self.buffer_content_md:
-                self.buffer_content_md[msg_date_str] = ""
-            
-            self.buffer_content_md[msg_date_str] += formatted_msg
-        except Exception as e:
-            logger.error(f"メッセージID {message.id} のMarkdown変換中にエラーが発生しました: {e}")
 
         self.current_batch_count += 1
 
