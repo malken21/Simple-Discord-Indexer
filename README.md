@@ -68,7 +68,7 @@ pip install -r requirements.txt
 Bot Token を設定します。`.env.example` をコピーして作成してください。
 
 ```env
-DISCORD_TOKEN=your_discord_bot_token
+DISCORD_TOKEN=your_discord_bot_token_here
 ```
 
 #### config.yaml (必須)
