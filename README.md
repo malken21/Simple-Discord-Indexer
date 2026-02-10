@@ -73,7 +73,7 @@ DISCORD_TOKEN=your_discord_bot_token
 
 #### config.yaml (必須)
 
-取得対象のサーバーIDやカテゴリなどの詳細設定を行います。
+取得対象のサーバーIDやカテゴリなどの詳細設定を行います。`config.yaml.example` をコピーして作成し、必要事項を記入してください。
 
 ```yaml
 discord:
