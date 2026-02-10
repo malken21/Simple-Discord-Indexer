@@ -14,13 +14,13 @@ class MessageFormatter:
     """
 
     @staticmethod
-    async def to_markdown(message: discord.Message, attachments_dir: str) -> str:
+    async def to_markdown(message: discord.Message, attachments_dir: str) -> tuple[str, list[str]]:
         """
         メッセージをMarkdown文字列に変換します。
-        添付ファイルがあればダウンロード処理も行います（副作用あり）。
-        TODO: 添付ファイルダウンロードの責務は分離すべきだが、現状はここで行う。
+        添付ファイルがあればダウンロード処理も行い、保存したファイル名のリストを返します。
         """
         msg_content = ""
+        attachment_filenames = []
 
         # 著者ヘッダー
         author_name = message.author.display_name
@@ -45,9 +45,7 @@ class MessageFormatter:
 
         # 添付ファイル
         if message.attachments:
-            # attachments_dir が相対パスで渡されることを想定していないため
-            # 呼び出し元で絶対パスを渡す必要があるが、Markdown内のリンクは相対パスにする必要がある
-            # ここでは attachments_dir は物理的な保存先パスを受け取る
+            # attachments_dir は物理的な保存先パスを受け取る
             
             for attachment in message.attachments:
                 try:
@@ -74,6 +72,8 @@ class MessageFormatter:
                                     # 最後のリトライでも失敗した場合
                                     raise e
                     
+                    attachment_filenames.append(filename)
+                    
                     # Markdownリンク（標準化された相対パス）
                     # ../attachments/{filename} という構造は固定とする
                     rel_path = f"../attachments/{filename}"
@@ -86,4 +86,4 @@ class MessageFormatter:
                     logger.warning(f"    添付ファイルのダウンロードに失敗しました {attachment.filename}: {e}")
         
         msg_content += "\n" # メッセージ間のスペース
-        return msg_content
+        return msg_content, attachment_filenames
