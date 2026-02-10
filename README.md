@@ -100,30 +100,48 @@ python main.py
 
 ## Docker での実行
 
-Docker および Docker Compose を使用して実行することも可能です。
+GitHub Container Registry (GHCR) で公開されている公式イメージを使用して簡単に実行できます。
 
-### 1. docker-compose.yml の作成
+### 1. イメージの取得
 
-プロジェクトルートに以下の内容で `docker-compose.yml` を作成してください。
+```bash
+docker pull ghcr.io/malken21/simple-discord-indexer:latest
+```
+
+### 2. 設定ファイルの準備
+
+カレントディレクトリに `.env` と `config.yaml` を用意してください。
+
+### 3. Docker Compose での実行
+
+プロジェクトルートに `docker-compose.yaml` を作成し、以下の内容を記述します。
 
 ```yaml
 services:
-  indexer:
-    build: .
+  discord-indexer:
+    image: ghcr.io/malken21/simple-discord-indexer:latest
     volumes:
       - ./data:/app/data
       - ./config.yaml:/app/config.yaml
       - ./.env:/app/.env
 ```
 
-### 2. ビルドと起動
+起動とログの確認：
 
 ```bash
-docker compose up -d --build
+docker compose up -d
+docker compose logs -f
 ```
 
-### 3. ログの確認
+### 4. docker run での直接実行
+
+Docker Compose を使用せずに直接実行する場合：
 
 ```bash
-docker compose logs -f
+docker run -d \
+  --name discord-indexer \
+  -v ./data:/app/data \
+  -v ./config.yaml:/app/config.yaml \
+  -v ./.env:/app/.env \
+  ghcr.io/malken21/simple-discord-indexer:latest
 ```
