@@ -40,7 +40,8 @@ class DiscordFetcher(discord.Client):
         
         for channel in channels:
             category_name = replace_fake_uppercase(channel.category.name if channel.category else "Uncategorized")
-            if category_name not in ALLOWED_CATEGORIES:
+            # カテゴリ名が許可リストにない、かつ（カテゴリなしの場合に空文字列が許可リストにない）場合はスキップ
+            if category_name not in ALLOWED_CATEGORIES and not (not channel.category and "" in ALLOWED_CATEGORIES):
                 continue
             logger.info(f'チャンネルを処理中: {channel.name} (ID: {channel.id}) カテゴリ: {category_name}')
             
@@ -88,7 +89,8 @@ class DiscordFetcher(discord.Client):
                  parent = guild.get_channel(thread.parent_id)
                  if parent and isinstance(parent, (discord.TextChannel, discord.ForumChannel)):
                     parent_category = replace_fake_uppercase(parent.category.name if parent.category else "Uncategorized")
-                    if parent_category not in ALLOWED_CATEGORIES:
+                    # 親カテゴリ名が許可リストにない、かつ（親カテゴリなしの場合に空文字列が許可リストにない）場合はスキップ
+                    if parent_category not in ALLOWED_CATEGORIES and not (not parent.category and "" in ALLOWED_CATEGORIES):
                         continue
                     logger.info(f'  スレッドを処理中: {thread.name} (親: {parent.name} カテゴリ: {parent_category})')
                     if await self.process_messageable(thread, category_path=parent_category, channel_name=replace_fake_uppercase(parent.name), file_name=replace_fake_uppercase(thread.name), is_thread=True):

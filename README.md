@@ -84,7 +84,7 @@ DISCORD_TOKEN=your_discord_bot_token_here
 discord:
   guild_id: 123456789012345678  # 対象サーバーID
 indexing:
-  allowed_categories:            # 取得対象カテゴリ（リスト形式）
+  allowed_categories: # 取得対象カテゴリ（リスト形式）
     - "general"
 ```
 

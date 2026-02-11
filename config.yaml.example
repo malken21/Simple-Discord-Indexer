@@ -1,11 +1,11 @@
 # Discord の設定
 discord:
-  token: null  # null の場合は環境変数 DISCORD_TOKEN を使用します
+  token: null # null の場合は環境変数 DISCORD_TOKEN を使用します
   guild_id: 123456789012345678
 
 # インデックス作成の設定
 indexing:
-  allowed_categories:
+  allowed_categories: # 取得対象カテゴリ（リスト形式）。空文字列 "" を含めるとカテゴリ未設定のチャンネルも対象になります
     - "general"
 
 # ログの設定
