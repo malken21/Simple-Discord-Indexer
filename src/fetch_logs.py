@@ -3,6 +3,7 @@ import os
 import json
 import datetime
 import logging
+import shutil
 from .config import DISCORD_TOKEN, GUILD_ID, KNOWLEDGE_BASE_DIR, ALLOWED_CATEGORIES, LOGGER_NAME
 from .storage import StorageManager
 from .utils import sanitize, replace_fake_uppercase
@@ -97,6 +98,7 @@ class DiscordFetcher(discord.Client):
                         updated = True
 
         self.storage.save_state()
+        self.storage.save_paths_state()
         
         if updated:
             logger.info('ログが更新されました。')
@@ -116,12 +118,34 @@ class DiscordFetcher(discord.Client):
         safe_filename = sanitize(file_name)
         
         # 構造: KNOWLEDGE_BASE / カテゴリ / チャンネル / ...
-        base_dir = os.path.join(KNOWLEDGE_BASE_DIR, safe_category, safe_channel)
-
         if is_thread:
-            channel_dir = os.path.join(base_dir, safe_filename)
+            rel_channel_dir = os.path.join(safe_category, safe_channel, safe_filename)
         else:
-            channel_dir = base_dir
+            rel_channel_dir = os.path.join(safe_category, safe_channel)
+
+        channel_dir = os.path.join(KNOWLEDGE_BASE_DIR, rel_channel_dir)
+
+        # チャンネル名やカテゴリー変更時のディレクトリ移動検知
+        old_rel_path = self.storage.get_channel_path(state_key)
+        
+        if old_rel_path and old_rel_path != rel_channel_dir:
+            # os.path.normpathを使って区切り文字などを揃えて比較するのも良いが、ここでは直接比較
+            old_abs_path = os.path.join(KNOWLEDGE_BASE_DIR, old_rel_path)
+            
+            if os.path.exists(old_abs_path):
+                logger.info(f"チャンネルの移動/名前変更を検知しました: {old_rel_path} -> {rel_channel_dir}")
+                os.makedirs(os.path.dirname(channel_dir), exist_ok=True)
+                
+                if os.path.exists(channel_dir):
+                    logger.warning(f"移動先のパスが既に存在します: {channel_dir}。安全のためディレクトリ移動処理をスキップします。")
+                else:
+                    try:
+                        shutil.move(old_abs_path, channel_dir)
+                        logger.info(f"ディレクトリの移動を完了しました。")
+                    except Exception as e:
+                        logger.error(f"ディレクトリの移動に失敗しました: {e}")
+
+        self.storage.update_channel_path(state_key, rel_channel_dir)
 
         messages_dir = os.path.join(channel_dir, "messages")
         jsonl_file = os.path.join(channel_dir, "messages.jsonl")

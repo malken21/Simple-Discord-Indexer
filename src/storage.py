@@ -3,7 +3,7 @@ import json
 import logging
 from typing import Dict, List, Any, Optional
 import discord
-from .config import STATE_FILE, LOGGER_NAME
+from .config import STATE_FILE, PATHS_STATE_FILE, LOGGER_NAME
 from .formatter import MessageFormatter
 
 logger = logging.getLogger(LOGGER_NAME)
@@ -15,6 +15,7 @@ class StorageManager:
     """
     def __init__(self, batch_size: int = 100):
         self.fetch_state: Dict[str, Any] = self.load_state()
+        self.paths_state: Dict[str, str] = self.load_paths_state()
         self.batch_size: int = batch_size
         self.buffer_content_md: Dict[str, str] = {}
         self.buffer_content_jsonl: List[str] = []
@@ -38,6 +39,33 @@ class StorageManager:
                 json.dump(self.fetch_state, f, indent=4)
         except Exception as e:
             logger.error(f"状態ファイルの保存に失敗しました: {e}")
+
+    def load_paths_state(self) -> Dict[str, str]:
+        """保存されたディレクトリパスの状態を読み込みます。"""
+        if os.path.exists(PATHS_STATE_FILE):
+            try:
+                with open(PATHS_STATE_FILE, 'r', encoding='utf-8') as f:
+                    return json.load(f)
+            except json.JSONDecodeError:
+                logger.error(f"パス状態ファイル {PATHS_STATE_FILE} の読み込みに失敗しました。")
+                return {}
+        return {}
+
+    def save_paths_state(self) -> None:
+        """現在のディレクトリパスの状態をファイルに保存します。"""
+        try:
+            with open(PATHS_STATE_FILE, 'w', encoding='utf-8') as f:
+                json.dump(self.paths_state, f, indent=4, ensure_ascii=False)
+        except Exception as e:
+            logger.error(f"パス状態ファイルの保存に失敗しました: {e}")
+
+    def get_channel_path(self, key: str) -> Optional[str]:
+        """指定されたキーのローカル保存パスを取得します。名前変更時の移動検知用。"""
+        return self.paths_state.get(key)
+        
+    def update_channel_path(self, key: str, path: str) -> None:
+        """指定されたキーのローカル保存パスを更新します。"""
+        self.paths_state[key] = path
 
     def get_last_message_id(self, key: str) -> Optional[int]:
         """指定されたキー（チャンネルIDなど）の最後のメッセージIDを取得します。"""

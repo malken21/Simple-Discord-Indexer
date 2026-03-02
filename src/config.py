@@ -65,6 +65,7 @@ if not DISCORD_TOKEN:
 DATA_DIR: str = os.path.join(BASE_DIR, config['paths'].get('data_dir', '../Cafe-Horizon-Discord-Vault'))
 KNOWLEDGE_BASE_DIR: str = DATA_DIR
 STATE_FILE: str = os.path.join(DATA_DIR, 'fetch_state.json')
+PATHS_STATE_FILE: str = os.path.join(DATA_DIR, 'paths_state.json')
 
 # ディレクトリが存在することを確認
 os.makedirs(KNOWLEDGE_BASE_DIR, exist_ok=True)
