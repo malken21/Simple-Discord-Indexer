@@ -63,7 +63,7 @@ data/                               # 取得データの保存先
 ```bash
 git clone https://github.com/malken21/Simple-Discord-Indexer
 cd Simple-Discord-Indexer
-pip install -r requirements.txt
+pip install .
 ```
 
 ### 3. 設定ファイル（.env / config.yaml）の準備
