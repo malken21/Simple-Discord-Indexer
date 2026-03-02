@@ -35,6 +35,7 @@ class DiscordFetcher(discord.Client):
         logger.info(f'ギルドのログを取得中: {guild.name}')
         
         updated = False
+        active_state_keys = set()
         
         # テキストチャンネルとフォーラムを取得
         channels = [c for c in guild.channels if isinstance(c, (discord.TextChannel, discord.ForumChannel))]
@@ -48,6 +49,7 @@ class DiscordFetcher(discord.Client):
             
             # 1. チャンネル自体の処理（テキストチャンネルの場合）
             if isinstance(channel, discord.TextChannel):
+                active_state_keys.add(str(channel.id))
                 if await self.process_messageable(channel, category_path=category_name, channel_name=replace_fake_uppercase(channel.name), file_name="messages"):
                     updated = True
 
@@ -56,6 +58,7 @@ class DiscordFetcher(discord.Client):
                 if hasattr(channel, 'threads'):
                     for thread in channel.threads:
                         logger.info(f'  スレッドを処理中: {thread.name}')
+                        active_state_keys.add(str(thread.id))
                         if await self.process_messageable(thread, category_path=category_name, channel_name=replace_fake_uppercase(channel.name), file_name=replace_fake_uppercase(thread.name), is_thread=True):
                             updated = True
             except Exception as e:
@@ -67,6 +70,7 @@ class DiscordFetcher(discord.Client):
                 try:
                     async for thread in channel.archived_threads(limit=None):
                         logger.info(f'  アーカイブされたスレッドを処理中: {thread.name}')
+                        active_state_keys.add(str(thread.id))
                         if await self.process_messageable(thread, category_path=category_name, channel_name=replace_fake_uppercase(channel.name), file_name=replace_fake_uppercase(thread.name), is_thread=True):
                             updated = True
                 except Exception as e:
@@ -78,6 +82,7 @@ class DiscordFetcher(discord.Client):
                 try:
                     async for thread in channel.archived_threads(limit=None):
                         logger.info(f'  アーカイブされたスレッドを処理中: {thread.name}')
+                        active_state_keys.add(str(thread.id))
                         if await self.process_messageable(thread, category_path=category_name, channel_name=replace_fake_uppercase(channel.name), file_name=replace_fake_uppercase(thread.name), is_thread=True):
                             updated = True
                 except Exception as e:
@@ -94,8 +99,12 @@ class DiscordFetcher(discord.Client):
                     if parent_category not in ALLOWED_CATEGORIES and not (not parent.category and "" in ALLOWED_CATEGORIES):
                         continue
                     logger.info(f'  スレッドを処理中: {thread.name} (親: {parent.name} カテゴリ: {parent_category})')
+                    active_state_keys.add(str(thread.id))
                     if await self.process_messageable(thread, category_path=parent_category, channel_name=replace_fake_uppercase(parent.name), file_name=replace_fake_uppercase(thread.name), is_thread=True):
                         updated = True
+
+        # 不要なステートの削除
+        self.storage.cleanup_untracked_states(active_state_keys)
 
         self.storage.save_state()
         self.storage.save_paths_state()

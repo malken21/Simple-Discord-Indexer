@@ -75,6 +75,30 @@ class StorageManager:
         """指定されたキーの最後のメッセージIDを更新します。"""
         self.fetch_state[key] = message_id
 
+    def cleanup_untracked_states(self, active_keys: set) -> None:
+        """
+        現在追跡対象となっているキー以外の状態を削除します。
+        
+        Args:
+            active_keys (set): 現在有効なチャンネル/スレッドのIDのセット。
+        """
+        # fetch_stateのパージ
+        keys_to_remove_fetch = [key for key in self.fetch_state if key not in active_keys]
+        for key in keys_to_remove_fetch:
+            del self.fetch_state[key]
+            logger.info(f"fetch_state から不要なキー {key} を削除しました。")
+
+        # paths_stateのパージ
+        keys_to_remove_paths = [key for key in self.paths_state if key not in active_keys]
+        for key in keys_to_remove_paths:
+            del self.paths_state[key]
+            logger.info(f"paths_state から不要なキー {key} を削除しました。")
+
+        # 削除が行われた場合はファイルに保存
+        if keys_to_remove_fetch or keys_to_remove_paths:
+            self.save_state()
+            self.save_paths_state()
+
     async def add_message(self, message: discord.Message, attachments_dir: str, messages_dir: str, jsonl_file: str) -> None:
         """
         メッセージをバッファに追加します。
